@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1, width=device-width">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="" crossorigin="anonymous"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <title>{% block title %}{% endblock %}</title>
+        <!-- <script src="script.js"></script> -->
+    </head>
+    <body>
+        {% if session["user_id"] %}
+        <nav class="navbar navbar-expand-md navbar-dark bg-info shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-semibold" href="/">FRC Stats Viewer</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            <!-- <a class="navbar-brand" href="#">Navbar</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button> -->
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/alliances">Alliances</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/display">X</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/new_game_solo">X</a>
+                        </li>
+                        {% if session['level'] >= 1 %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/view_reports">View Reports</a>
+                        </li>
+                        {% endif %}
+                        {% if session['level'] >= 2 %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/blacklist">View Blacklist</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/manage_users">Manage Users</a>
+                        </li>
+                        <!-- <li class="nav-item">
+                            <a class="nav-link" href="/view_data">View Data</a>
+                        </li> -->
+                        {% endif %}
+                        <!-- <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                More
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="#">Action</a></li>
+                                <li><a class="dropdown-item" href="#">Another action</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">Something else here</a></li>
+                            </ul>
+                        </li> -->
+                    </ul>
+                    <div class="d-flex">
+                        <a class="btn btn-outline-light btn-sm me-2" href="/profile">Profile</a>
+                        <a class="btn btn-light btn-sm" href="/login">Log out</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        {% else %}
+        <nav class="navbar navbar-expand-md navbar-dark bg-info shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-semibold" href="/">FRC Stats Viewer</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/signup">Signup</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+        <p></p>
+
+        <!-- <div class="text-info">
+            <h1>Hi Text</h1>
+        </div> -->
+        <main class="container my-4">
+            {% block main %}{% endblock %}
+            <!-- <footer>Synonyms from thesaurus.com</footer> -->
+        </main>
+    </body>
+</html>
