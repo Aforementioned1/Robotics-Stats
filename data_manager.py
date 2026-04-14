@@ -16,7 +16,7 @@ def cache_output(path: str, filename_lambda, refresh: timedelta, returns_json = 
     def decorator(func):
         @functools.wraps(func)
         def decorated_function(*args, **kwargs):
-            filename = filename_lambda(*args, **kwargs)
+            filename = filename_lambda(*args, **kwargs) 
 
             file_path = Path("cache/" + path + filename)
 
@@ -229,9 +229,10 @@ def get_team_avg_pick(year: int, team_code: str):
     print(num / ev)
 
 """ Finds all teams whose number is between min and max,
-    exclusive, and participated in year_req """
-@cache_output("general/teams/", lambda min, max, year: "teams_" + str(min) + "_to_" + str(max) + "_" + str(year) + ".json", timedelta(hours=24))
-def get_team_avg_years_part(min: int, max: int, year_req: int):
+    exclusive, and participated in year_req 
+    if year_req == 0, find all teams that have participated in any season"""
+@cache_output("general/teams/", lambda min, max, year = 0: "teams_" + str(min) + "_to_" + str(max) + "_" + str(year) + ".json", timedelta(hours=24))
+def get_team_avg_years_part(min: int, max: int, year_req = 0):
     total_years = 0
     amt = 0
     team_data = {}
@@ -241,6 +242,10 @@ def get_team_avg_years_part(min: int, max: int, year_req: int):
         years = call("team/frc" + str(i) + "/years_participated")
         if years is not None:
             if year_req in years:
+                total_years += len(years)
+                amt += 1
+                team_data[str(i)] = years
+            elif year_req == 0 and len(years) > 0:
                 total_years += len(years)
                 amt += 1
                 team_data[str(i)] = years
@@ -255,6 +260,85 @@ def get_team_avg_years_part(min: int, max: int, year_req: int):
         "teams": amt,
         "avg": (total_years / amt),
         "team_data": team_data
+    }
+
+    return output
+
+"""
+"""
+@cache_output("general/alliances/", lambda event: "pick_places_" + event + ".json", timedelta(hours=24))
+def uwu(event_code: str):
+    alliances = call("event/" + event_code + "/alliances")
+    picks = {0: [], 1: [], 2: [], 3: []}
+    # all_picks = {}
+    pick_sums = {0: 0, 1: 0, 2: 0, 3: 0}
+    total_sum = 0
+    total_teams = 0
+
+    low = -1
+    lows = {0: -1, 1: -1, 2: -1, 3: -1}
+    highs = {0: 1000000, 1: 1000000, 2: 1000000, 3: 1000000}
+
+    high = 1000000
+    # unreasonably high
+
+    for i in alliances:
+        for j in i['picks']:
+            status = call("team/" + j + "/event/" + event_code + "/status")
+            pick = status['alliance']['pick']
+            rank = status['qual']['ranking']['rank']
+            number = status['alliance']['number']
+
+            picks[pick].append(rank)
+
+            pick_sums[pick] += rank
+            
+            # all_picks[pick] = {"rank": rank, "number": number}
+
+            total_sum += rank
+            total_teams += 1
+
+
+            if (rank > low):
+                low = rank
+            if (rank < high):
+                high = rank
+
+            if (rank > lows[pick]):
+                lows[pick] = rank
+            if (rank < highs[pick]):
+                highs[pick] = rank
+
+            print(rank)
+
+    # print(all_picks)
+    print(picks)
+    print(pick_sums)
+
+    pick_avg = {}
+
+    for i in range(0, len(picks)):
+        if len(picks[i]) > 0:
+            avg = pick_sums[i] / len(picks[i])
+            print(avg)
+            pick_avg[i] = avg
+
+    print("avg: " + str(total_sum / total_teams))
+
+    # print(picks)
+
+    output = {
+        "high": high,
+        "low": low,
+        "highs": highs,
+        "lows": lows,
+        "total_avg": total_sum / total_teams,
+        "total_sum": total_sum,
+        "total_teams": total_teams,
+        "pick_avg": pick_avg,
+        "pick_sums": pick_sums,
+        "picks": picks,
+        # "all_picks": all_picks
     }
 
     return output
@@ -277,4 +361,5 @@ def get_team_avg_years_part(min: int, max: int, year_req: int):
 # for i in range(1, 9):
 #     alliance_place_stats(i, data_apr_9)
 
-print(get_team_avg_years_part(1, 1000, 2026))
+# print(get_team_avg_years_part(1, 1000))
+print(uwu("2025dal"))
