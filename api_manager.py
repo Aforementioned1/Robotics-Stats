@@ -21,6 +21,10 @@ def call(endpoint: str):
     if file_path.is_file():
         with open("cache/" + endpoint + ".json", 'r') as f:
             text = json.load(f)
+            with open("cache/bypass.json", 'r') as f2:
+                text2 = json.load(f2)
+                if endpoint in text2['endpoints']:
+                    return text['data']
             
             header[CACHE_KEY] = text['etag']
 
@@ -50,7 +54,3 @@ def call(endpoint: str):
         f.write("{\"etag\": \"" + esc_header + "\",\n \"data\": " + json.dumps(resp.json(), indent=4) + "}")
 
     return resp.json()
-
-
-
-# print(call("events/2026/keys"))

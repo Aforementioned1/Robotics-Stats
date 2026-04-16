@@ -2,15 +2,10 @@
 
 import json
 import datetime
-from datetime import date, timedelta
+from datetime import timedelta
 from api_manager import call
 from pathlib import Path
 import functools
-
-API_URL = "https://www.thebluealliance.com/api/v3/"
-HEADER = {
-        "X-TBA-Auth-Key": "NvwzlQxqO6BHmjT2cHdNDdgZlQSxdvbMrc8DiP7saThVURWSdtYhUUr0H4RcHRw7"
-    }
 
 def cache_output(path: str, filename_lambda, refresh: timedelta, returns_json = True, json_indent = 4):
     def decorator(func):
@@ -40,6 +35,40 @@ def cache_output(path: str, filename_lambda, refresh: timedelta, returns_json = 
 
         return decorated_function
     return decorator
+
+def add_bypass(endpoint: str):
+    text = {}
+
+    with open("cache/bypass.json", 'r') as f:
+        text = json.load(f)
+
+    if endpoint not in text['endpoints']:
+        text['endpoints'].append(endpoint)
+
+        with open("cache/bypass.json", 'w') as f:
+            f.write(json.dumps(text, indent=4))
+
+def is_real_event(event: dict):
+    """ Returns whether the valid event passed in from call("event/code")
+    has a week value associated with it, and is not from 2020 or 2021 """
+
+    real = not(event['week'] is None or event['year'] == 2020 or event['year'] == 2021)
+    if not real:
+        add_bypass("event/" + event['key'])
+
+    return real
+
+def has_concluded(event: dict):
+    """ Returns whether the current time is more than 24 hours after the event's end_date """
+
+    end = datetime.datetime.fromisoformat(event['end_date']).date()
+    diff = datetime.datetime.now().date() - end
+
+    has_ended = diff > timedelta(hours=24)
+    if has_ended:
+        add_bypass("event/" + event['key'])
+    
+    return has_ended
 
 def get_event_alliance_pos(code: str):
     """ Returns a dict containing alliance numbers as keys and places as values """
@@ -195,7 +224,8 @@ def get_picks(code: str):
 
     print(all)
         
-
+# could be more robust by changing refresh time?
+@cache_output("general/team/", lambda year, team: "team_" + team + "_avg_pick_" + year + ".json", timedelta(hours=24))
 def get_team_avg_pick(year: int, team_code: str):
     keys = call("team/" + team_code + "/events/keys")
     ev = 0
@@ -206,7 +236,8 @@ def get_team_avg_pick(year: int, team_code: str):
         alliance = call("team/" + team_code + "/event/" + k + "/status")
         event = call("event/" + k)
         
-        if (not(event['week'] is None or event['year'] == 2020 or event['year'] == 2021)):
+        if is_real_event(event) and has_concluded(event):
+            add_bypass("team/" + team_code + "/event/" + k + "/status")
             ev += 1
             if alliance is None or alliance['alliance'] is None:
                 num += 25
@@ -224,15 +255,22 @@ def get_team_avg_pick(year: int, team_code: str):
                 num += val
                 print(val)
 
-    print(ev)
-    print(num)
-    print(num / ev)
+    output = {
+        "events": ev,
+        "total_num": num,
+        "avg": num / ev
+    }
 
-""" Finds all teams whose number is between min and max,
-    exclusive, and participated in year_req 
-    if year_req == 0, find all teams that have participated in any season"""
+    print(output)
+
+    return output
+
+
 @cache_output("general/teams/", lambda min, max, year = 0: "teams_" + str(min) + "_to_" + str(max) + "_" + str(year) + ".json", timedelta(hours=24))
 def get_team_avg_years_part(min: int, max: int, year_req = 0):
+    """ Finds all teams whose number is between min and max,
+    exclusive, and participated in year_req 
+    if year_req == 0, find all teams that have participated in any season"""
     total_years = 0
     amt = 0
     team_data = {}
@@ -264,10 +302,66 @@ def get_team_avg_years_part(min: int, max: int, year_req = 0):
 
     return output
 
+@cache_output("general/team/", lambda team: "team_" + team + 'avg_quals.json', timedelta(hours=72))
+def get_team_avg_qual_place(team_code: str):
+    keys = call("team/" + team_code + "/events/keys")
+    events = 0
+    place = 0
+    percs = 0
+    total_teams = 0
+    high = 1000000
+    high_code = ""
+    low = -1
+    low_code = ""
+    if (keys is not None):
+        for k in keys:
+            print(k)
+
+            event = call("event/" + k)
+            if is_real_event(event) and has_concluded(event):
+                status = call("team/" + team_code + "/event/" + k + "/status")
+
+                if status['qual'] is not None and status['qual']['ranking']['rank'] is not None:
+                    events += 1
+
+                    rank = status['qual']['ranking']['rank']
+                    if rank > low:
+                        low = rank
+                        low_code = k
+                    if rank < high:
+                        high = rank
+                        high_code = k
+
+                    place += rank
+
+                    teams = status['qual']['num_teams']
+                    total_teams += teams
+
+                    percs += rank / teams
+
+        avg_place = place / events
+        avg_perc = percs / events
+
+        output = {
+            "events": events,
+            "avg_place": avg_place,
+            "avg_perc": avg_perc,
+            "total_teams": total_teams,
+            "high": high,
+            "high_code": high_code,
+            "low": low,
+            "low_code": low_code
+        }
+
+        return output
+    
+    return {"events": 0}
+            
+
 """
 """
 @cache_output("general/alliances/", lambda event: "pick_places_" + event + ".json", timedelta(hours=24))
-def uwu(event_code: str):
+def avg_pick_places(event_code: str):
     alliances = call("event/" + event_code + "/alliances")
     picks = {0: [], 1: [], 2: [], 3: []}
     # all_picks = {}
@@ -362,4 +456,20 @@ def uwu(event_code: str):
 #     alliance_place_stats(i, data_apr_9)
 
 # print(get_team_avg_years_part(1, 1000))
-print(uwu("2025dal"))
+# print(avg_pick_places("2026alhu"))
+
+time1 = datetime.datetime.now()
+print(get_team_avg_qual_place("frc2056"))
+time2 = datetime.datetime.now()
+print(time1)
+print(time2)
+print(time1.date() - time2.date())
+# add_bypass("team/frc3630")
+
+# 2026-04-16 11:39:17.117560
+# 2026-04-16 11:40:20.489354
+
+# 2026-04-16 11:42:38.359329
+# 2026-04-16 11:43:30.218613
+
+# get_team_avg_pick(0, "frc2056")
