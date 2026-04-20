@@ -7,7 +7,7 @@ from api_manager import call
 from pathlib import Path
 import functools
 
-def cache_output(path: str, filename_lambda, refresh: timedelta, returns_json = True, json_indent = 4):
+def cache_output(path: str, filename_lambda, refresh: timedelta, returns_json = True, json_indent = 4, version = -1):
     def decorator(func):
         @functools.wraps(func)
         def decorated_function(*args, **kwargs):
@@ -20,17 +20,18 @@ def cache_output(path: str, filename_lambda, refresh: timedelta, returns_json = 
                 with open("cache/" + path + filename, 'r') as f:
                     text = json.load(f)
                     
-                    date = datetime.datetime.fromisoformat(text['timestamp']).date()
+                    date = datetime.datetime.fromisoformat(text['timestamp'])
 
-                    diff = datetime.datetime.now().date() - date
+                    diff = datetime.datetime.now() - date
+                    # print("DIFF: " + str(diff))
 
-                    if diff < refresh:
+                    if diff < refresh and 'version' in text and text['version'] >= version:
                         return text['data']
             else:
                 file_path.parent.mkdir(parents=True, exist_ok=True)
             output = func(*args, **kwargs)
             with open("cache/" + path + filename, 'w') as f:
-                f.write('{"timestamp": "' + str(datetime.datetime.now()) + '",\n "data": ' + (json.dumps(output, indent=json_indent) if returns_json else output)+ '}')
+                f.write('{"timestamp": "' + str(datetime.datetime.now()) + '",\n "version": ' + str(version) + ',\n "data": ' + (json.dumps(output, indent=json_indent) if returns_json else output)+ '}')
             return output
 
         return decorated_function
@@ -81,22 +82,23 @@ def get_event_alliance_pos(code: str):
     if alliances is not None:
         for a in alliances:
             # print(a)
-            status = a['status']
+            if ('status' in a):
+                status = a['status']
 
-            match status['double_elim_round']:
-                case 'Round 2':
-                    place_dict[number_from_name(a['name'])] = 8
-                case 'Round 3':
-                    place_dict[number_from_name(a['name'])] = 6
-                case 'Round 4':
-                    place_dict[number_from_name(a['name'])] = 4
-                case 'Round 5':
-                    place_dict[number_from_name(a['name'])] = 3
-                case 'Finals':
-                    if status['status'] == 'won':
-                        place_dict[number_from_name(a['name'])] = 1
-                    else:
-                        place_dict[number_from_name(a['name'])] = 2
+                match status['double_elim_round']:
+                    case 'Round 2':
+                        place_dict[number_from_name(a['name'])] = 8
+                    case 'Round 3':
+                        place_dict[number_from_name(a['name'])] = 6
+                    case 'Round 4':
+                        place_dict[number_from_name(a['name'])] = 4
+                    case 'Round 5':
+                        place_dict[number_from_name(a['name'])] = 3
+                    case 'Finals':
+                        if status['status'] == 'won':
+                            place_dict[number_from_name(a['name'])] = 1
+                        else:
+                            place_dict[number_from_name(a['name'])] = 2
         
         print(place_dict)
         print(len(place_dict.values()))
@@ -119,19 +121,20 @@ def get_events(year: int):
     return event_list
 
 """  """
+@cache_output("general/", lambda year: str(year) + "_alliance_percents.json", timedelta(hours=24), version = 5)
 def perc_win(year: int):
-    file_path = Path("cache/general/" + str(year) + "_alliance_percents.json")
+    # file_path = Path("cache/general/" + str(year) + "_alliance_percents.json")
 
-    if file_path.is_file():
-        with open("cache/general/" + str(year) + "_alliance_percents.json", 'r') as f:
-            text = json.load(f)
+    # if file_path.is_file():
+    #     with open("cache/general/" + str(year) + "_alliance_percents.json", 'r') as f:
+    #         text = json.load(f)
             
-            date = datetime.datetime.fromisoformat(text['timestamp']).date()
+    #         date = datetime.datetime.fromisoformat(text['timestamp']).date()
 
-            diff = datetime.datetime.now().date() - date
+    #         diff = datetime.datetime.now().date() - date
 
-            if diff < timedelta(hours=24):
-                return text['data']
+    #         if diff < timedelta(hours=24):
+    #             return text['data']
 
     places = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []}
 
@@ -139,11 +142,14 @@ def perc_win(year: int):
 
     for e in event_codes:
         print(e)
-        pos = get_event_alliance_pos(e)
+        event = call("event/" + e)
+        if has_concluded(event) and is_real_event(event) and event['event_type_string'] != "District Championship":
+            add_bypass("event/" + e + "/alliances")
+            pos = get_event_alliance_pos(e)
 
-        if pos is not None:
-            for i in range(1,9):
-                places[pos[i]].append(i)
+            if pos is not None:
+                for i in range(1,9):
+                    places[pos[i]].append(i)
 
     the_stuff = {"places": {}, "alliances": {}}
 
@@ -159,8 +165,8 @@ def perc_win(year: int):
     for i in range(1,9):
         the_stuff['alliances'][i] = alliance_place_stats(i, places)
 
-    with open("cache/general/" + str(year) + "_alliance_percents.json", 'w') as f:
-        f.write('{"timestamp": "' + str(datetime.datetime.now()) + '",\n "data": ' + json.dumps(the_stuff, indent=4) + '}')
+    # with open("cache/general/" + str(year) + "_alliance_percents.json", 'w') as f:
+    #     f.write('{"timestamp": "' + str(datetime.datetime.now()) + '",\n "data": ' + json.dumps(the_stuff, indent=4) + '}')
 
     return the_stuff
         
@@ -183,7 +189,11 @@ def place_stats(place: int, places: dict):
     print(num)
     print(perc)
 
-    return num
+    output = {
+        "num": num,
+        "perc": perc
+    }
+    return output
 
 def alliance_place_stats(alliance: int, places: dict):
     total = 0
@@ -211,7 +221,12 @@ def alliance_place_stats(alliance: int, places: dict):
     print(num)
     print(perc)
 
-    return num
+    output = {
+        "num": num,
+        "perc": perc
+    }
+
+    return output
 
 def get_picks(code: str):
     alliances = call("event/" + code + "/alliances")
@@ -225,7 +240,7 @@ def get_picks(code: str):
     print(all)
         
 # could be more robust by changing refresh time?
-@cache_output("general/team/", lambda year, team: "team_" + team + "_avg_pick_" + year + ".json", timedelta(hours=24))
+@cache_output("general/team/", lambda year, team: "team_" + str(team) + "_avg_pick_" + str(year) + ".json", timedelta(hours=24), version=1)
 def get_team_avg_pick(year: int, team_code: str):
     keys = call("team/" + team_code + "/events/keys")
     ev = 0
@@ -236,7 +251,7 @@ def get_team_avg_pick(year: int, team_code: str):
         alliance = call("team/" + team_code + "/event/" + k + "/status")
         event = call("event/" + k)
         
-        if is_real_event(event) and has_concluded(event):
+        if has_concluded(event) and is_real_event(event): #switched
             add_bypass("team/" + team_code + "/event/" + k + "/status")
             ev += 1
             if alliance is None or alliance['alliance'] is None:
@@ -266,7 +281,7 @@ def get_team_avg_pick(year: int, team_code: str):
     return output
 
 
-@cache_output("general/teams/", lambda min, max, year = 0: "teams_" + str(min) + "_to_" + str(max) + "_" + str(year) + ".json", timedelta(hours=24))
+@cache_output("general/teams/", lambda min, max, year = 0: "teams_" + str(min) + "_to_" + str(max) + "_" + str(year) + ".json", timedelta(hours=24), version=1)
 def get_team_avg_years_part(min: int, max: int, year_req = 0):
     """ Finds all teams whose number is between min and max,
     exclusive, and participated in year_req 
@@ -302,23 +317,43 @@ def get_team_avg_years_part(min: int, max: int, year_req = 0):
 
     return output
 
-@cache_output("general/team/", lambda team: "team_" + team + 'avg_quals.json', timedelta(hours=72))
-def get_team_avg_qual_place(team_code: str):
+def valid_year(year: int):
+    return year > 1992 and year < datetime.datetime.now().year
+
+@cache_output(path = "general/team/", filename_lambda =
+        lambda team, min = 1992, max = datetime.datetime.now().year: 
+            "team_" + team + '_' + str(min) + '_to_' + str(max) + '_avg_quals.json'
+                if valid_year(min) and valid_year(max)
+            else
+                "team_" + team + "_after_" + str(min) + "_avg_quals.json"
+                    if valid_year(min) and not valid_year(max)
+                else
+                    "team_" + team + "_before_" + str(max) + "_avg_quals.json"
+                        if not valid_year(min) and valid_year(max)
+                    else
+                        "team_" + team + "_avg_quals.json"
+              , refresh = timedelta(hours=72), version = 4)
+def get_team_avg_qual_place(team_code: str, year_min = 1992, year_max = datetime.datetime.now().year):
     keys = call("team/" + team_code + "/events/keys")
     events = 0
     place = 0
-    percs = 0
+    old_percs = 0
+    new_percs = 0
     total_teams = 0
     high = 1000000
-    high_code = ""
+    high_codes = []
     low = -1
-    low_code = ""
+    low_codes = []
+
+    
     if (keys is not None):
         for k in keys:
             print(k)
 
             event = call("event/" + k)
-            if is_real_event(event) and has_concluded(event):
+            year = event['year']
+
+            if has_concluded(event) and is_real_event(event) and year >= year_min and year <= year_max:
                 status = call("team/" + team_code + "/event/" + k + "/status")
 
                 if status['qual'] is not None and status['qual']['ranking']['rank'] is not None:
@@ -327,30 +362,42 @@ def get_team_avg_qual_place(team_code: str):
                     rank = status['qual']['ranking']['rank']
                     if rank > low:
                         low = rank
-                        low_code = k
+                        low_codes.clear()
+                        low_codes.append(k)
+                    elif rank == low:
+                        low_codes.append(k)
                     if rank < high:
                         high = rank
-                        high_code = k
+                        high_codes.clear()
+                        high_codes.append(k)
+                    elif rank == high:
+                        high_codes.append(k)
+
 
                     place += rank
 
                     teams = status['qual']['num_teams']
                     total_teams += teams
 
-                    percs += rank / teams
+                    old_percs += rank / teams
+                    new_percs += (rank - 1) / (teams - 1) # fit to zero
 
         avg_place = place / events
-        avg_perc = percs / events
+        avg_old_perc = old_percs / events
+        avg_new_perc = new_percs / events
+        avg_teams = total_teams / events
 
         output = {
             "events": events,
             "avg_place": avg_place,
-            "avg_perc": avg_perc,
+            "avg_old_perc": avg_old_perc,
+            "avg_new_perc": avg_new_perc,
             "total_teams": total_teams,
+            "avg_teams_per_event": avg_teams,
             "high": high,
-            "high_code": high_code,
+            "high_codes": high_codes,
             "low": low,
-            "low_code": low_code
+            "low_codes": low_codes
         }
 
         return output
@@ -360,9 +407,13 @@ def get_team_avg_qual_place(team_code: str):
 
 """
 """
-@cache_output("general/alliances/", lambda event: "pick_places_" + event + ".json", timedelta(hours=24))
+@cache_output(path = "general/alliances/", filename_lambda = lambda event: "pick_places_" + event + ".json", refresh = timedelta(hours=24), version = 1)
 def avg_pick_places(event_code: str):
+    event = call("event/" + event_code)
     alliances = call("event/" + event_code + "/alliances")
+    if has_concluded(event):
+        add_bypass("event/" + event_code + "/alliances")
+
     picks = {0: [], 1: [], 2: [], 3: []}
     # all_picks = {}
     pick_sums = {0: 0, 1: 0, 2: 0, 3: 0}
@@ -437,6 +488,9 @@ def avg_pick_places(event_code: str):
 
     return output
 
+def get_avg_record(team_code: str, year_min: int, year_max: int):
+    return
+
     # return json.loads("{'total_years': " + str(total_years) + ", 'teams': " + str(amt) + ", 'avg': " + str(total_years / amt) + ", 'team_data':" + str(team_data) + "}")
 
 
@@ -459,11 +513,14 @@ def avg_pick_places(event_code: str):
 # print(avg_pick_places("2026alhu"))
 
 time1 = datetime.datetime.now()
-print(get_team_avg_qual_place("frc2056"))
+perc_win(2026)
+# print(get_team_avg_qual_place("frc3630"))
+# avg_pick_places("2026mnum")
+# get_team_avg_pick(0, "frc2056")
 time2 = datetime.datetime.now()
 print(time1)
 print(time2)
-print(time1.date() - time2.date())
+print((time2 - time1))
 # add_bypass("team/frc3630")
 
 # 2026-04-16 11:39:17.117560

@@ -31,6 +31,7 @@ def call(endpoint: str):
     else:
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # print("REQUEST AHAHHAHAHHAHAHAHHA")
     resp = requests.get(API_URL + endpoint, headers=header)
 
     if resp.status_code == 404:
