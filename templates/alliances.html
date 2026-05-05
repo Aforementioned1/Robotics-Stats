@@ -6,7 +6,8 @@
 
 {% block main %}
     <h1>Alliances</h1>
-    <table>
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-sm">
         <tr>
             <th>
                 Place
@@ -42,14 +43,60 @@
         {% for num, place in alliances['places'].items() %}
         <tr>
             <td>{{ num }}</td>
-            {% for alliance in place.values() %}
+            {% for alliance in place.num.values() %}
             <td>{{ alliance }} </td>
             {% endfor %}
         </tr>
         {% endfor %}
     </table>
+    </div>
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-sm">
+        <tr>
+            <th>
+                Place
+            </th>
+            <th>
+                Alliance 1
+            </th>
+            <th>
+                Alliance 2
+            </th>
+            <th>
+                Alliance 3
+            </th>
+            <th>
+                Alliance 4
+            </th>
+            <th>
+                Alliance 5
+            </th>
+            <th>
+                Alliance 6
+            </th>
+            <th>
+                Alliance 7
+            </th>
+            <th>
+                Alliance 8
+            </th>
+                        <th>
+                Total Teams
+            </th>
+        </tr>
+        {% for num, place in alliances['places'].items() %}
+        <tr>
+            <td>{{ num }}</td>
+            {% for alliance in place.perc.values() %}
+            <td>{{ alliance | round(4)}} </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
 
-    <table>
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-sm">
         <tr>
             <th>
                 Alliance
@@ -79,10 +126,49 @@
         {% for num, place in alliances['alliances'].items() %}
         <tr>
             <td>{{ num }}</td>
-            {% for alliance in place.values() %}
+            {% for alliance in place.num.values() %}
             <td>{{ alliance }} </td>
             {% endfor %}
         </tr>
         {% endfor %}
     </table>
+    </div>
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-sm">
+        <tr>
+            <th>
+                Alliance
+            </th>
+            <th>
+                1st
+            </th>
+            <th>
+                2nd
+            </th>
+            <th>
+                3rd
+            </th>
+            <th>
+                4th
+            </th>
+            <th>
+                6th
+            </th>
+            <th>
+                8th
+            </th>
+                        <th>
+                Total Teams
+            </th>
+        </tr>
+        {% for num, place in alliances['alliances'].items() %}
+        <tr>
+            <td>{{ num }}</td>
+            {% for alliance in place.perc.values() %}
+            <td>{{ alliance | round(4)}} </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
 {% endblock %}

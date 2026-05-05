@@ -1,0 +1,107 @@
+/* Basic site styles and Bootstrap overrides */
+:root{
+  --brand: #0dcaf0; /* bright info */
+  --bg: #f8f9fb;
+  --muted: #6c757d;
+}
+html,body{height:100%;}
+body{
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg);
+  color: #212529;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+.container{max-width:1100px}
+main.container{padding-top:1rem}
+
+/* Navbar tweaks */
+.navbar-brand{font-weight:600}
+.navbar.bg-info{background-color:var(--brand)!important}
+.navbar .nav-link{color:rgba(255,255,255,0.95)}
+.navbar .nav-link:hover{color:#ffffff;text-decoration:underline}
+.navbar .btn-outline-light{color:#fff;border-color:rgba(255,255,255,0.85)}
+.navbar .btn-outline-light:hover{color:var(--brand);background:#fff}
+
+/* Make cards and tables stand out on the light background */
+.card, .table{background:#ffffff}
+.card{border:1px solid rgba(0,0,0,0.05);border-radius:.4rem}
+.table{border-radius:.4rem;overflow:hidden}
+
+/* Utilities */
+.text-muted{color:var(--muted)!important}
+.btn-sm{font-size:.85rem}
+
+/* Responsive spacing adjustments used across templates */
+.page-header{margin-bottom:1rem}
+.table-responsive{box-shadow:0 1px 2px rgba(0,0,0,0.03);border-radius:.35rem}
+
+/* Small visual polish for lists and links */
+.list-group-item{border:1px solid rgba(0,0,0,0.03)}
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Fix for overflowing pre/code blocks */
+pre, code{word-break:break-word}
+
+/* Table defaults for templates that don't add Bootstrap classes */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:1rem;
+  background:#fff;
+}
+th, td{
+  padding:.65rem .75rem;
+  text-align:left;
+  vertical-align:top;
+  border-bottom:1px solid rgba(0,0,0,0.06);
+}
+th{font-weight:600;background:rgba(0,0,0,0.02)}
+tr:hover td{background:rgba(13,202,240,0.02)}
+
+/* Make narrow tables wrap nicely on small screens */
+.table-responsive{overflow-x:auto;padding:0.25rem 0;border-radius:.35rem}
+
+/* Heading spacing */
+h1{font-size:1.6rem;margin-bottom:1rem}
+
+/* Aligned table helpers */
+table.table-aligned{table-layout:fixed}
+table.table-aligned th, table.table-aligned td{overflow:visible;text-overflow:clip;white-space:normal}
+
+/* 10-column tables (places): narrow place/total, equal alliance columns */
+table.table-aligned.places col.place{width:6%}
+table.table-aligned.places col.alliance{width:11%}
+table.table-aligned.places col.total{width:6%}
+
+/* 8-column tables (alliances): wide team name, small stat columns */
+
+/* Adjust alliances math so widths sum to 100%: 46 + 6*8 + 6 = 100 */
+table.table-aligned.alliances col.team{width:46%}
+table.table-aligned.alliances col.stat{width:8%}
+table.table-aligned.alliances col.total{width:6%}
+
+/* Center numeric columns, keep first column left-aligned */
+table.table-aligned th, table.table-aligned td{ text-align:center }
+table.table-aligned th:first-child, table.table-aligned td:first-child{ text-align:left }
+
+/* Slightly larger cell padding for readability */
+table.table-aligned th, table.table-aligned td{padding:.9rem .85rem}
+
+/* small help icon for inline tooltips */
+.help{
+  display:inline-block;
+  width:1.05rem;
+  height:1.05rem;
+  line-height:1.05rem;
+  border-radius:50%;
+  border:1px solid rgba(0,0,0,0.08);
+  color:var(--muted);
+  text-align:center;
+  font-size:0.8rem;
+  margin-left:0.35rem;
+  cursor:help;
+  background: #fff;
+}
+.help:hover{background:rgba(13,202,240,0.06);color:#000}

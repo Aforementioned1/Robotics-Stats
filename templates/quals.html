@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Alliances
+{% endblock %}
+
+{% block main %}
+    <h1>Average Quals</h1>
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-sm">
+        <tbody>
+            <tr>
+                <th scope="row">Average Raw Place</th>
+                <td>{{ avg.avg_place }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Average Old Fraction <span class="help" title="This stat is a weighted average of
+                    place that takes teams per event into account. It is calculated by dividing each place by the
+                    amount of teams in each event. A ranking closer to 0 is stronger (rank 1 every event), and a ranking closer to 1 is weaker (ranked last every event." data-bs-toggle="tooltip" data-bs-placement="top">?</span></th>
+                <td>{{ avg.avg_old_perc }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Average New Fraction <span class="help" title="This stat is a weighted average of
+                    place that takes teams per event into account. Unlike the old fraction, it is possible to obtain a new fraction of 0.
+                    It is calculated by dividing each place minus 1 by the amount of teams minus 1 in each event.
+                    A ranking closer to 0 is stronger (rank 1 every event), and a ranking closer to 1 is weaker (ranked last every event)." data-bs-toggle="tooltip" data-bs-placement="top">?</span></th>
+                <td>{{ avg.avg_new_perc }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Total Teams <span class="help" title="The total amount of teams at events that this team has competed at.
+                    Includes the team, so the total number of teams competed against can be calculated by subtracting
+                    Events from Total Teams." data-bs-toggle="tooltip" data-bs-placement="top">?</span></th>
+                <td>{{ avg.total_teams }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Events</th>
+                <td>{{ avg.events }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Average Teams Per Event</th>
+                <td>{{ avg.avg_teams_per_event }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Highest Rank</th>
+                <td>{{ avg.high }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Lowest Rank</th>
+                <td>{{ avg.low }}</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">Highest Code(s)</h2>
+        <button id="toggleHigh" class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#highCodesCollapse" aria-expanded="false" aria-controls="highCodesCollapse">
+            Show
+        </button>
+    </div>
+    <div class="collapse" id="highCodesCollapse">
+      <div class="table-responsive">
+      <table class="table table-striped table-hover table-sm mb-3">
+          <tbody>
+          {% for code in avg.high_codes %}
+              <tr><td>{{ code }}</td></tr>
+          {% endfor %}
+          </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">Lowest Code(s)</h2>
+        <button id="toggleLow" class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#lowCodesCollapse" aria-expanded="false" aria-controls="lowCodesCollapse">
+            Show
+        </button>
+    </div>
+    <div class="collapse" id="lowCodesCollapse">
+      <div class="table-responsive">
+      <table class="table table-striped table-hover table-sm mb-3">
+          <tbody>
+          {% for code in avg.low_codes %}
+              <tr><td>{{ code }}</td></tr>
+          {% endfor %}
+          </tbody>
+      </table>
+      </div>
+    </div>
+
+    
+{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    var high = document.getElementById('highCodesCollapse');
+    var btnHigh = document.getElementById('toggleHigh');
+    if(high && btnHigh){
+        high.addEventListener('show.bs.collapse', function(){ btnHigh.textContent = 'Hide' });
+        high.addEventListener('hide.bs.collapse', function(){ btnHigh.textContent = 'Show' });
+    }
+    var low = document.getElementById('lowCodesCollapse');
+    var btnLow = document.getElementById('toggleLow');
+    if(low && btnLow){
+        low.addEventListener('show.bs.collapse', function(){ btnLow.textContent = 'Hide' });
+        low.addEventListener('hide.bs.collapse', function(){ btnLow.textContent = 'Show' });
+    }
+});
+</script>

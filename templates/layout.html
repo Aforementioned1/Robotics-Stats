@@ -104,5 +104,13 @@
             {% block main %}{% endblock %}
             <!-- <footer>Synonyms from thesaurus.com</footer> -->
         </main>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                tooltipTriggerList.forEach(function (el) {
+                    new bootstrap.Tooltip(el, { delay: { show: 0, hide: 150 } })
+                })
+            })
+        </script>
     </body>
 </html>

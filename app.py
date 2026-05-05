@@ -4,7 +4,7 @@ import dotenv
 
 from helpers import login_required
 
-from data_manager import alliance_place_stats, place_stats, perc_win
+from data_manager import alliance_place_stats, place_stats, perc_win, get_team_avg_qual_place
 
 dotenv_file = dotenv.find_dotenv()
 dotenv.load_dotenv(dotenv_file)
@@ -37,8 +37,18 @@ def after_request(response):
 def index():
     return render_template("index.html")
 
-@app.route("/alliances/2026")
-def alliances():
-    stuff = perc_win(2026)
+@app.route("/alliances/<year>")
+def alliances(year):
+    stuff = perc_win(year)
     print(stuff)
     return render_template("alliances.html", alliances=stuff)
+
+@app.route("/team/<code>/avg_quals/<start>/<end>")
+def quals_bounded(code, start, end):
+    avg = get_team_avg_qual_place(code, int(start), int(end))
+    print(avg)
+    return render_template("quals.html", avg=avg)
+
+@app.route("team/<code>")
+def team(code):
+    return
